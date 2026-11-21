@@ -1,0 +1,29 @@
+{
+  "name": "@gepetto/cli",
+  "version": "0.2.1",
+  "description": "Gepetto API v2 from the terminal: sign in, get an API key, render real estate photos (enhance, declutter, furnish, sky, restyle, walls and floors, upscale), subscribe.",
+  "type": "module",
+  "bin": {
+    "gepetto": "bin/gepetto.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "gepetto",
+    "real-estate",
+    "virtual-staging",
+    "photo-editing",
+    "api",
+    "cli"
+  ],
+  "homepage": "https://docs.gepettoapp.com",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
