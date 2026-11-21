@@ -1,6 +1,6 @@
 {
   "name": "@gepetto/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Gepetto API v2 from the terminal: sign in, get an API key, render real estate photos (enhance, declutter, furnish, sky, restyle, walls and floors, upscale), subscribe.",
   "type": "module",
   "bin": {
