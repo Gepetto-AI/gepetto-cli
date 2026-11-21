@@ -1,0 +1,44 @@
+name: Release
+
+# Publishes @gepetto/cli to npm when a version tag is pushed:
+#   npm version patch        (or minor, major: bumps package.json and VERSION, commits, tags)
+#   git push --follow-tags
+#
+# No npm token: npm trusts this workflow (Trusted Publishing, set on npmjs.com in the settings of the package:
+# Gepetto-AI / gepetto-cli / release.yml), and each version is published with provenance.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # Trusted Publishing and provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: npm 11.5.1 or later (needed by Trusted Publishing)
+        run: npm install -g npm@latest
+
+      - name: Tag, package.json and VERSION agree
+        run: |
+          v=$(node -p "require('./package.json').version")
+          test "$GITHUB_REF_NAME" = "v$v" || { echo "Tag $GITHUB_REF_NAME, but package.json says $v"; exit 1; }
+          grep -q "const VERSION = '$v'" bin/gepetto.mjs || { echo "VERSION in bin/gepetto.mjs is not $v"; exit 1; }
+
+      - name: The CLI starts
+        run: node bin/gepetto.mjs --help
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: '' # setup-node puts a placeholder here; empty, npm uses the identity of the workflow

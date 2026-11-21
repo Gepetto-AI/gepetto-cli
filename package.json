@@ -25,5 +25,12 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gepetto-AI/gepetto-cli.git"
+  },
+  "scripts": {
+    "version": "node scripts/sync-version.mjs bin/gepetto.mjs && git add bin/gepetto.mjs"
   }
 }

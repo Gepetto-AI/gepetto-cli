@@ -1,5 +1,7 @@
 # @gepetto/cli
 
+[![npm](https://img.shields.io/npm/v/@gepetto/cli)](https://www.npmjs.com/package/@gepetto/cli)
+
 Gepetto API v2 from the terminal: real estate photo editing (enhance, declutter, furnish, sky, creative restyle, walls
 and floors, upscale). Made so that a person, or a coding agent such as Claude Code, can go from an empty project to a
 first render without leaving the terminal. Needs Node 18 or later. Formerly `gepetto-cli`.
