@@ -230,6 +230,13 @@ const commands = {
     fail('payment_timeout', 'No payment after 30 minutes. Run the command again once paid: the key will be written.');
   },
 
+  /** The Stripe customer portal of the account: invoices, payment method, cancellation. */
+  async billing() {
+    const { url } = await api('POST', '/cli/billing', { token: session() });
+    out(`Billing (invoices, payment method, cancellation): ${url}`, { event: 'billing', url });
+    openBrowser(url);
+  },
+
   async run() {
     const tool = positional[1];
     if (!TOOLS.includes(tool)) fail('unknown_tool', `Tool: ${TOOLS.join(', ')}. Example: npx @gepetto/cli run declutter --image ./room.jpg`);
@@ -326,6 +333,7 @@ const commands = {
   webhook test <url>             Send a signed success and failure to your webhook endpoint
   secret                         Your webhook signing secret
   subscribe                      Payment link of the subscription; writes the live key once paid
+  billing                        Invoices, payment method and cancellation (Stripe portal)
   logout | whoami
 
   Every command accepts --json. Docs: https://docs.gepettoapp.com`);

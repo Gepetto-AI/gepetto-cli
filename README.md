@@ -19,6 +19,7 @@ npx @gepetto/cli webhook test http://localhost:3000/api/gepetto   # sends a sign
 npx @gepetto/cli secret         # your webhook signing secret
 npx @gepetto/cli keys           # your test and live keys, masked (--show to print them in full)
 npx @gepetto/cli subscribe      # payment link; the live key is written to .env.production.local once paid
+npx @gepetto/cli billing        # invoices, payment method and cancellation (Stripe portal)
 npx @gepetto/cli whoami         # or logout
 ```
 
