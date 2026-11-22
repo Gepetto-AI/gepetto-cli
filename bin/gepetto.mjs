@@ -7,7 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 
-const VERSION = '0.2.2';
+const VERSION = '0.2.3';
 const API = (process.env.GEPETTO_API_URL || 'https://europe-west1-gepettoai.cloudfunctions.net/v2').replace(/\/$/, '');
 // The keys go wherever GEPETTO_API_URL points: https only (http allowed for a local server)
 {
