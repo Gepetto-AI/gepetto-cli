@@ -19,8 +19,10 @@ const API = (process.env.GEPETTO_API_URL || 'https://europe-west1-gepettoai.clou
 const BROWSER_HOSTS = ['app.gepettoapp.com', 'pay.gepettoapp.com', 'checkout.stripe.com'];
 const CONFIG_DIR = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'gepetto');
 const CREDENTIALS = path.join(CONFIG_DIR, 'credentials.json');
-const TOOLS = ['declutter', 'furnish', 'sunshine', 'creative-redesign', 'surfaces', 'enhance', 'upscale'];
-const LISTS = ['rooms', 'styles', 'furnitures', 'skies', 'surfaces'];
+const TOOLS = ['declutter', 'furnish', 'sunshine', 'creative-redesign', 'surfaces', 'enhance', 'upscale', 'camera-move', 'transition'];
+/** Under /v2/video: always asynchronous, followed here until the MP4 is ready (live key only). */
+const VIDEOS = ['camera-move', 'transition'];
+const LISTS = ['rooms', 'styles', 'furnitures', 'skies', 'surfaces', 'transitions'];
 
 // --- arguments ---
 
@@ -241,17 +243,29 @@ const commands = {
     const tool = positional[1];
     if (!TOOLS.includes(tool)) fail('unknown_tool', `Tool: ${TOOLS.join(', ')}. Example: npx @gepetto/cli run declutter --image ./room.jpg`);
     const key = await apiKey();
-    const { image, mask, out: outFile, key: _k, noBrowser: _n, ...rest } = flags;
-    if (typeof image !== 'string') fail('missing_parameter', '--image is required (a local file or a URL).');
-    const body = { ...rest, url: await imageUrl(image, key, '--image') };
+    const video = VIDEOS.includes(tool);
+    const { image, mask, end, transition, out: outFile, key: _k, noBrowser: _n, ...rest } = flags;
+    const body = { ...rest };
+    if (typeof image === 'string') body.url = await imageUrl(image, key, '--image');
+    else if (!(tool === 'transition' && body.jobId)) fail('missing_parameter', '--image is required (a local file or a URL).');
     if (typeof mask === 'string') body.mask = await imageUrl(mask, key, '--mask');
-    if (!JSON_OUT) console.log(body.webhook ? 'Sending the job…' : 'Rendering (about 15 to 60 s)…');
-    const job = await api('POST', `/${tool}`, { token: key, body });
+    if (typeof end === 'string') body.endUrl = await imageUrl(end, key, '--end');
+    if (typeof transition === 'string') body.transitionId = transition;
+    if (!JSON_OUT) console.log(body.webhook ? 'Sending the job…' : video ? 'Making the video (2 to 10 minutes)…' : 'Rendering (about 15 to 60 s)…');
+    let job = await api('POST', video ? `/video/${tool}` : `/${tool}`, { token: key, body });
+    // A video answers 202 at once: follow it until it is done (30 minutes at most, as the API)
+    const deadline = Date.now() + 30 * 60 * 1000;
+    while (video && !body.webhook && (job.status === 'pending' || job.status === 'processing') && Date.now() < deadline) {
+      await sleep(5000);
+      job = await api('GET', `/job/${encodeURIComponent(job.id)}`, { token: key });
+    }
+    if (job.status === 'error') fail(job.error?.code ?? 'render_failed', `${job.error?.message ?? 'The render failed.'} (job ${job.id})`);
     if (job.status !== 'success') return out(`Job ${job.id}: ${job.status}. Follow it with: npx @gepetto/cli job ${job.id}`, job);
-    // Default name built from what the server sent: only letters, digits, - and _, and an image extension
+    // Default name built from what the server sent: only letters, digits, - and _, and a known extension
     const ext = path.extname(new URL(job.output).pathname).toLowerCase();
     const safeId = String(job.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'output';
-    const target = typeof outFile === 'string' ? outFile : `${tool}-${safeId}${['.jpg', '.jpeg', '.png', '.webp'].includes(ext) ? ext : '.jpg'}`;
+    const known = video ? ['.mp4'] : ['.jpg', '.jpeg', '.png', '.webp'];
+    const target = typeof outFile === 'string' ? outFile : `${tool}-${safeId}${known.includes(ext) ? ext : known[0]}`;
     fs.writeFileSync(target, Buffer.from(await (await fetch(job.output)).arrayBuffer()));
     out(`Done in ${job.createdAt && job.finishedAt ? Math.round((Date.parse(job.finishedAt) - Date.parse(job.createdAt)) / 1000) + ' s' : '—'}: ${target} (${job.test ? 'test key' : `${job.priceCents} cents`})`, { ...job, file: target });
   },
@@ -281,7 +295,7 @@ const commands = {
   async list() {
     const what = positional[1];
     if (!LISTS.includes(what)) fail('unknown_list', `List: ${LISTS.join(', ')}`);
-    const data = await api('GET', `/${what}`, { token: await apiKey() });
+    const data = await api('GET', what === 'transitions' ? '/video/transitions' : `/${what}`, { token: await apiKey() });
     if (JSON_OUT) return console.log(JSON.stringify(data));
     const show = (items) => items.map((x) => `  ${x.id}${x.name_en || x.name ? `  (${x.name_en || x.name})` : ''}${x.modes ? `  modes: ${x.modes.join(', ')}` : ''}`).join('\n');
     if (Array.isArray(data)) console.log(show(data));
@@ -327,6 +341,9 @@ const commands = {
   run <tool> --image <file|url> [--mask <file|url>] [--out file] [--<param> value]
                                  Tools: ${TOOLS.join(', ')}
                                  e.g. run furnish --image room.jpg --roomId bedroom --styleId modern
+                                 Videos (live key): run camera-move --image room.jpg --camera zoom_in
+                                 run transition --image before.jpg --end after.jpg --transition <id>
+                                 (or --jobId <id of a finished render>, or --prompt "...")
   list <${LISTS.join('|')}>  Valid ids for the parameters
   job <id> | jobs [--failed]     A job, or the latest ones (with the reason of a failure)
   usage                          Renders and consumption of the period

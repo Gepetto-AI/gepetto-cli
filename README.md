@@ -12,7 +12,9 @@ npx @gepetto/cli init           # writes GEPETTO_API_KEY (test key, 200 free ren
 npx @gepetto/cli run declutter --image ./room.jpg --out empty.png
 npx @gepetto/cli run furnish --image ./room.jpg --roomId bedroom --styleId modern
 npx @gepetto/cli run enhance --image ./room.jpg --straighten
-npx @gepetto/cli list rooms     # valid ids (also: styles, furnitures, skies, surfaces)
+npx @gepetto/cli run camera-move --image ./room.jpg --camera zoom_in   # video, live key only
+npx @gepetto/cli run transition --jobId <id> --transition <id>      # video from a finished render
+npx @gepetto/cli list rooms     # valid ids (also: styles, furnitures, skies, surfaces, transitions)
 npx @gepetto/cli job <id>       # one job; jobs --failed lists the latest failures with their reason
 npx @gepetto/cli usage          # renders and consumption of the period
 npx @gepetto/cli webhook test http://localhost:3000/api/gepetto   # sends a signed success and failure to your endpoint
@@ -23,8 +25,9 @@ npx @gepetto/cli billing        # invoices, payment method and cancellation (Str
 npx @gepetto/cli whoami         # or logout
 ```
 
-`run` passes any API parameter as is: `--keepFireplace`, `--straighten`, `--skyId sunny`, `--resolution 4k`... A local `--image` or
-`--mask` file is uploaded first.
+`run` passes any API parameter as is: `--keepFireplace`, `--straighten`, `--skyId sunny`, `--resolution 4k`... A local `--image`,
+`--mask` or `--end` file is uploaded first. The videos (`camera-move`, `transition`) need a live key; `run` waits for
+the MP4 (2 to 10 minutes) and saves it.
 
 Every command accepts `--json`. The API key is read from `--key`, then `GEPETTO_API_KEY`, then `.env.local` /
 `.env`, then the test key of the signed-in account.
